@@ -2,15 +2,18 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Windows;
 
 namespace ButtonPhoneEmulator
 {
     public class KeyboardViewModel : INotifyPropertyChanged
     {
+        private Timer? _timer;
+        private int _countOfPress = 0;
+        private Button? _lastPressedButton = null;
+        private string _title = string.Empty;
+
         private readonly Dictionary<Button, string> _keypad = new()
         {
             {Button.One, ".,?!:"},
@@ -26,11 +29,6 @@ namespace ButtonPhoneEmulator
             {Button.Star, "*"},
             {Button.Lattice, "#"},
         };
-
-        private Timer? _timer;
-        private int _countOfPress = 0;
-        private Button? _lastPressedButton = null;
-        private string _title = string.Empty;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -69,7 +67,8 @@ namespace ButtonPhoneEmulator
             //    return btn != Button.Star || !string.IsNullOrEmpty(Title);
             return arg is Button;
         }
-
+        //Если бы было боевое приложение с перспективами масштабирования, то надо было бы вынести этот(как минимум) метод в сервис,
+        //который инжектили бы сюда через конструктор или DI контейнер, чтобы потом можно было подменять логику и обкладывать тестами
         private void Execute(object? obj)
         {
             if (obj is not Button btn)
@@ -90,12 +89,9 @@ namespace ButtonPhoneEmulator
                 }
 
                 var newString = Title;
-                if (_countOfPress != 0)
+                if (_countOfPress != 0 && !string.IsNullOrEmpty(Title))
                 {
-                    if (!string.IsNullOrEmpty(Title))
-                    {
-                        newString = newString[..^1];
-                    }
+                    newString = newString[..^1];
                 }
 
                 newString += _keypad[btn][_countOfPress++];
@@ -108,7 +104,6 @@ namespace ButtonPhoneEmulator
                 _timer?.Dispose();
                 _timer = new Timer(Callback, null, 1000, 0);
             }
-
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
